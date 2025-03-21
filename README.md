@@ -24,3 +24,78 @@
 ---
 
 <br>
+
+## 프로젝트 개요 - Docker를 활용한 Spring Boot 배포
+
+❤️ Docker
+
+## 미션 수행 과정
+
+### Spring log 파일 설정하고 Container로 올리기
+
+Spring의 어플리케이션 로그파일들을 수집할 수 있도록 `logback` 을 사용한다.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- 콘솔 로그 설정 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 파일 로그 설정 -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/app-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>7</maxHistory> <!-- 로그 파일 보관 일수 -->
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 기본 로그 레벨 설정 -->
+    <logger name="org.springframework" level="INFO"/>
+    <logger name="edu.fisa.ce" level="DEBUG"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
+
+    <!-- 로그 출력 (콘솔 + 파일) -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE"/>
+    </root>
+
+</configuration>
+```
+
+해당 로그를 Docker-Compose 안의 NFS 서버로 옮긴다.
+
+```sh
+#!/bin/bash
+
+LOG_DIR="./logs" # 로그 파일이 위치한 디렉토리
+DEST_DIR="/mnt/log-volumes/app-logs" # 이동할 대상 디렉토리
+
+# 대상 디렉토리가 없으면 생성
+mkdir -p "$DEST_DIR"
+
+# 로그 파일 이동
+mv "$LOG_DIR"/*.log "$DEST_DIR"
+
+# 결과 출력
+if [ $? -eq 0 ]; then
+    echo "✅ 로그 파일들이 $DEST_DIR 로 이동 완료!"
+else
+    echo "❌ 로그 파일 이동 실패!"
+fi
+```
+
+### 
+
+
+### Container 상태 체크하기
