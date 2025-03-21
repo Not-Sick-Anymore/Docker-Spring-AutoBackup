@@ -30,7 +30,7 @@
 ❤️ **프로젝트 개요** <br/>
 - `Docker-Compose`를 활용하여 image를 한 번에 관리하기
 - Docker의 상태를 저장하지 못하는 Docker 환경에서 따로 DB의 로그 파일을 저장함으로써 Docker의 보완책 찾기
-- Container 내에 `NFS Directory`를 만들고 해당 폴더에 자동으로 백업하는 환경 구성하기기
+- Container 내에 `NFS Directory`를 만들고 해당 폴더에 자동으로 백업하는 환경 구성하기
 
 ✅ 왜 NFS를 사용했는가?<br/>
 - 네트워크를 통해서 **팀원 간 동일한 파일 시스템을 공유**할 수 있기 때문에, 볼륨 마운트나 바인드 마운트보다 확장성이 높다고 판단
@@ -105,7 +105,6 @@ curl "http://{ip}:8080/log/check-user?username=fail"
 
 위의 명령어들을 통해 로그를 발생시켰다.
 
-
 ```sh
 #!/bin/bash
 
@@ -131,17 +130,23 @@ fi
 NFS 서버를 구성하기 위해서 Ubuntu에서 아래 명령어를 실행한다.
 
 ```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install nfs-kernel-server
+$sudo apt update && sudo apt upgrade -y
+$sudo apt install nfs-kernel-server
 
 # NFS 서버 추가
-sudo systemctl start nfs-kernel-server
-sudo systemctl enable nfs-kernel-server
-
-sudo nano /etc/exports
+$sudo systemctl start nfs-kernel-server
+$sudo systemctl enable nfs-kernel-server
 ```
 
-docker-compose.yml 파일에 NFS 서버의 파일 경로를 설정한다.
+서버를 추가한 뒤, 설정 파일을 아래와 같이 수정하여 NFS를 적용한다.
+
+```bash
+$sudo nano /etc/exports
+
+/mnt/nfs_shared 0.0.0.0/24(rw,sync,no_subtree_check)
+```
+
+`docker-compose.yml` 파일에 NFS 서버의 파일 경로를 설정한다.
 
 ```yaml
 ...
@@ -156,4 +161,31 @@ volumes:
 ```
 
 
+
 ### Container 상태 체크하기
+
+Container가 Healthy 상태인지 체크하는 코드를 crontab에 등록하여 Container의 상태를 주기적으로 체크한다.
+
+```bash
+#!/bin/bash
+
+CONTAINER_DB_NAME="mysqldb"
+CONTAINER_APP_NAME="springbootapp"
+
+STATUS=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_NAME)
+
+if [ "$STATUS" == "unhealthy" ]; then
+    echo "⚠️ WARNING: $CONTAINER_NAME is UNHEALTHY!"
+else
+    echo "✅ $CONTAINER_NAME is $STATUS"
+fi
+
+APP_STATUS=$(docker inspect --format='{{.State.Health.Status}}' $CONTAINER_APP_NAME)
+
+if [ "$APP_STATUS" == "unhealthy" ]; then
+    echo "⚠️ WARNING: $CONTAINER_APP_NAME is UNHEALTHY!"
+else
+    echo "✅ $CONTAINER_APP_NAME is $APP_STATUS"
+fi
+```
+

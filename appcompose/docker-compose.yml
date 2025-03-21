@@ -1,0 +1,64 @@
+version: "1.0"
+
+services:
+  db:
+    container_name: mysqldb
+    image: mysql:8.0
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: fisa
+      MYSQL_USER: user01
+      MYSQL_PASSWORD: user01
+    networks:
+      - spring-mysql-net
+    # volumes:
+    #   - ./mysql-data-dev:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 192.168.88.160 -u root --password=$${MYSQL_ROOT_PASSWORD} || exit 1']
+      interval: 10s
+      timeout: 2s
+      retries: 100
+
+  app:
+    container_name: springbootapp
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      # SPRING_PROFILES_ACTIVE: dev
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_DATABASE: fisa
+      MYSQL_USER: user01
+      MYSQL_PASSWORD: user01
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - spring-mysql-net
+    # volumes:
+    #   - ./logs/dev:/app/logs
+  
+  ui-for-docker:
+    image: uifd/ui-for-docker
+    container_name: ui-for-docker
+    ports:
+      - "9000:9000"
+    networks:
+      - spring-mysql-net
+
+networks:
+  spring-mysql-net:
+    driver: bridge
+
+# volumes:
+#   my_nfs_volume:
+#     driver: local
+#     driver_opts:
+#       type: "nfs"
+#       o: "addr=192.168.88.160,rw"
+#       device: ":/mnt/nfs_shared"
