@@ -27,7 +27,14 @@
 
 ## 프로젝트 개요 - Docker를 활용한 Spring Boot 배포
 
-❤️ Docker
+❤️ **프로젝트 개요** <br/>
+- `Docker-Compose`를 활용하여 image를 한 번에 관리하기
+- Docker의 상태를 저장하지 못하는 Docker 환경에서 따로 DB의 로그 파일을 저장함으로써 Docker의 보완책 찾기
+- Container 내에 `NFS Directory`를 만들고 해당 폴더에 자동으로 백업하는 환경 구성하기기
+
+✅ 왜 NFS를 사용했는가?<br/>
+- 네트워크를 통해서 **팀원 간 동일한 파일 시스템을 공유**할 수 있기 때문에, 볼륨 마운트나 바인드 마운트보다 확장성이 높다고 판단
+- 데이터 저장소를 중앙 집중형으로 관리 가능하기 때문에 단일 서버에서 모든 데이터를 관리할 수 있음
 
 ## 미션 수행 과정
 
@@ -73,7 +80,31 @@ Spring의 어플리케이션 로그파일들을 수집할 수 있도록 `logback
 </configuration>
 ```
 
-해당 로그를 Docker-Compose 안의 NFS 서버로 옮긴다.
+해당 로그를 Docker-Compose 안의 NFS 서버로 옮긴다. 로그를 테스트 가능한 URL은 다음과 같다.
+
+<details>
+<summary> 👻 info 로그 테스트</summary>
+
+```
+# info 로그 테스트
+curl http://{ip}:8080/log/info
+
+# warn 로그 테스트
+curl http://{ip}:8080/log/warn
+
+# error: 잘못된 숫자 입력
+curl "http://{ip}:8080/log/error?number=0"
+
+# 전체 흐름 테스트, 이름이 짧을 경우 INFO, WARN발생
+curl "http://{ip}:8080/log/check-user?username=ab"
+
+# username=fail일 경우 error 발생
+curl "http://{ip}:8080/log/check-user?username=fail"
+```
+</details> <br/>
+
+위의 명령어들을 통해 로그를 발생시켰다.
+
 
 ```sh
 #!/bin/bash
@@ -95,7 +126,34 @@ else
 fi
 ```
 
-### 
+### NFS 서버 및 클라이언트 구성하기
+
+NFS 서버를 구성하기 위해서 Ubuntu에서 아래 명령어를 실행한다.
+
+```bash
+sudo apt update && sudo apt upgrade -y
+sudo apt install nfs-kernel-server
+
+# NFS 서버 추가
+sudo systemctl start nfs-kernel-server
+sudo systemctl enable nfs-kernel-server
+
+sudo nano /etc/exports
+```
+
+docker-compose.yml 파일에 NFS 서버의 파일 경로를 설정한다.
+
+```yaml
+...
+
+volumes:
+  my_nfs_volume:
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=192.168.88.160,rw"
+      device: ":/mnt/nfs_shared"
+```
 
 
 ### Container 상태 체크하기
