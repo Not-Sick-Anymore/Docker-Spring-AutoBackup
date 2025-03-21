@@ -7,15 +7,14 @@
 
 ## 목차
 1. [🙆🏻‍♂️ 팀원](#%EF%B8%8F-팀원)
-2. [🐳 프로젝트 개요 - Docker를 활용한 Spring Boot 배포](#-프로젝트-개요---Docker를-활용한-Spring-Boot-배포)
+2. [❤️ 프로젝트 개요 - Docker를 활용한 Spring Boot 배포](#%EF%B8%8F-프로젝트-개요---docker를-활용한-spring-boot-배포)
 3. [🛠 미션 수행 과정](#-미션-수행-과정)
-4. [📌 최종 과정 요약](#-최종-과정-요약)
-5. [📚 프로젝트에서 배운 점](#-프로젝트에서-배운-점)
+4. [📚 프로젝트를 통해 배운 점](#-프로젝트를-통해-배운-점)
 
 ## 🙆🏻‍♂️ 팀원
 
-#### 팀명 : Ctrl-4
-우리FISA 4기 클라우드 엔지니어링 Ctrl-4팀
+#### 팀명 : 아프지말아조
+우리FISA 4기 클라우드 엔지니어링 아프지말아조팀
 
 |<img src="https://avatars.githubusercontent.com/u/150774446?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/55776421?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/179544856?v=4" width="150" height="150"/>|<img src="https://avatars.githubusercontent.com/u/129985846?v=4" width="150" height="150"/>|
 |:-:|:-:|:-:|:-:|
@@ -25,18 +24,18 @@
 
 <br>
 
-## 프로젝트 개요 - Docker를 활용한 Spring Boot 배포
+## ❤️ 프로젝트 개요 - Docker를 활용한 Spring Boot 배포
 
-❤️ **프로젝트 개요** <br/>
+**프로젝트 개요** <br/>
 - `Docker-Compose`를 활용하여 image를 한 번에 관리하기
 - Docker의 상태를 저장하지 못하는 Docker 환경에서 따로 DB의 로그 파일을 저장함으로써 Docker의 보완책 찾기
 - Container 내에 `NFS Directory`를 만들고 해당 폴더에 자동으로 백업하는 환경 구성하기
 
-✅ 왜 NFS를 사용했는가?<br/>
+**왜 NFS를 사용했는가?** <br/>
 - 네트워크를 통해서 **팀원 간 동일한 파일 시스템을 공유**할 수 있기 때문에, 볼륨 마운트나 바인드 마운트보다 확장성이 높다고 판단
 - 데이터 저장소를 중앙 집중형으로 관리 가능하기 때문에 단일 서버에서 모든 데이터를 관리할 수 있음
 
-## 미션 수행 과정
+## 🛠 미션 수행 과정
 
 ### Spring log 파일 설정하고 Container로 올리기
 
@@ -201,5 +200,9 @@ fi
 <img src="img/un3.png" width=500>
 
 > mysqldb 비정상 & springbootapp 구동 확인
+
+---
+
+## 📚 프로젝트를 통해 배운 점
 
 
