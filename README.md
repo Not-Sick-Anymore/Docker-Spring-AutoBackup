@@ -188,4 +188,18 @@ else
     echo "✅ $CONTAINER_APP_NAME is $APP_STATUS"
 fi
 ```
+### 정상적인 상태
+<img src="img/healthy.png" width=500>
+
+> mysqldb & springbootapp 정상 구동 확인
+
+### 비정상적인 상태
+<img src="img/un2.png" width=500>
+
+> mysqldb 정상 & springbootapp 비정상 확인
+
+<img src="img/un3.png" width=500>
+
+> mysqldb 비정상 & springbootapp 구동 확인
+
 
