@@ -35,9 +35,17 @@
 - 네트워크를 통해서 **팀원 간 동일한 파일 시스템을 공유**할 수 있기 때문에, 볼륨 마운트나 바인드 마운트보다 확장성이 높다고 판단
 - 데이터 저장소를 중앙 집중형으로 관리 가능하기 때문에 단일 서버에서 모든 데이터를 관리할 수 있음
 
+**전체 프로세스**<br/>
+1️. Spring Boot 애플리케이션(springbootapp)이 /app/logs/에 로그(app.log)를 생성
+2️. 1분마다 크론탭(moveLogs.sh)이 실행 → /app/logs/에 있는 로그를 /mnt/log-volumes/app-logs/로 이동
+3️. 로그 파일이 NFS 마운트된 경로(/mnt/log-volumes/app-logs/)로 이동됨 → 클라이언트에서도 확인 가능
+4️. 1분마다 크론탭(checkCondition.sh)이 실행 → mysqldb, springbootapp 컨테이너 상태를 체크
+
+
+
 ## 🛠 미션 수행 과정
 
-### Spring log 파일 설정하고 Container로 올리기
+### 1️⃣ Spring log 파일 설정하고 Container로 올리기
 
 Spring의 어플리케이션 로그파일들을 수집할 수 있도록 `logback` 을 사용한다.
 
@@ -124,7 +132,10 @@ else
 fi
 ```
 
-### NFS 서버 및 클라이언트 구성하기
+
+### 2️⃣ NFS 서버 및 클라이언트 구성하기
+
+#### NFS 서버 구성 
 
 NFS 서버를 구성하기 위해서 Ubuntu에서 아래 명령어를 실행한다.
 
@@ -135,15 +146,40 @@ $sudo apt install nfs-kernel-server
 # NFS 서버 추가
 $sudo systemctl start nfs-kernel-server
 $sudo systemctl enable nfs-kernel-server
-```
 
-서버를 추가한 뒤, 설정 파일을 아래와 같이 수정하여 NFS를 적용한다.
+# 루트 디렉터리 및 공유 마운트 지점 설정
+$sudo mkdir -p <마운트 지점>
 
-```bash
+# 디렉터리 마운트를 공유 마운트 지점에 바인딩
+$sudo mount --bind <마운트 지점>
+
+# 접근 허용할 클라이언트 IP 설정
 $sudo nano /etc/exports
 
-/mnt/nfs_shared 0.0.0.0/24(rw,sync,no_subtree_check)
+/srv/nfs4         *(rw,sync,no_subtree_check,crossmnt,fsid=0)
+/srv/nfs4/backups *(rw,sync,no_subtree_check)
+/srv/nfs4/www     *(rw,sync,no_subtree_check)
+
+# 설정 업데이트
+$sudo exportfs -ar 
+# 설정 확인
+$sudo exportfs -v
 ```
+
+
+
+#### NFS 클라이언트 구성 
+
+```
+# 클라이언트 서버 설치 
+$sudo apt update
+$sudo apt install nfs-common
+
+# 마운트 확인
+$shomount -e <NFS서버 IP>
+
+```
+
 
 `docker-compose.yml` 파일에 NFS 서버의 파일 경로를 설정한다.
 
@@ -161,7 +197,12 @@ volumes:
 
 
 
-### Container 상태 체크하기
+
+
+
+
+
+### 3️⃣ Container 상태 체크하기
 
 Container가 Healthy 상태인지 체크하는 코드를 crontab에 등록하여 Container의 상태를 주기적으로 체크한다.
 
@@ -187,12 +228,12 @@ else
     echo "✅ $CONTAINER_APP_NAME is $APP_STATUS"
 fi
 ```
-### 정상적인 상태
+- 정상적인 상태
 <img src="img/healthy.png" width=500>
 
 > mysqldb & springbootapp 정상 구동 확인
 
-### 비정상적인 상태
+- 비정상적인 상태
 <img src="img/un2.png" width=500>
 
 > mysqldb 정상 & springbootapp 비정상 확인
@@ -202,6 +243,41 @@ fi
 > mysqldb 비정상 & springbootapp 구동 확인
 
 ---
+
+### 4️⃣ 로그 파일을 NFS 마운트된 디렉터리로 이동시키기
+
+발생한 로그 파일이 NFS 통해 마운트된 디렉터리로 이동하는지 확인하는 코드를 crontab에 등록하여 상태를 주기적으로 체크한다.
+
+```
+#!/bin/bash
+
+LOG_DIR="./logs" # 로그 파일이 위치한 디렉토리
+DEST_DIR="/mnt/log-volumes/app-logs" # 이동할 대상 디렉토리
+
+# 대상 디렉토리가 없으면 생성
+mkdir -p "$DEST_DIR"
+
+# 로그 파일 이동
+mv "$LOG_DIR"/*.log "$DEST_DIR"
+
+# 결과 출력
+if [ $? -eq 0 ]; then
+    echo "✅ 로그 파일들이 $DEST_DIR 로 이동 완료!"
+else
+    echo "❌ 로그 파일 이동 실패!"
+fi
+
+```
+
+
+5️⃣ Crontab 등록 
+
+위 두 가지 파일을 주기적으로 실행시키도록 crontab에 등록한다. 
+```
+```
+
+
+
 
 ## 📚 프로젝트를 통해 배운 점
 
