@@ -36,10 +36,10 @@
 - 데이터 저장소를 중앙 집중형으로 관리 가능하기 때문에 단일 서버에서 모든 데이터를 관리할 수 있음
 
 **전체 프로세스**<br/>
-1️. Spring Boot 애플리케이션(springbootapp)이 /app/logs/에 로그(app.log)를 생성
-2️. 1분마다 크론탭(moveLogs.sh)이 실행 → /app/logs/에 있는 로그를 /mnt/log-volumes/app-logs/로 이동
-3️. 로그 파일이 NFS 마운트된 경로(/mnt/log-volumes/app-logs/)로 이동됨 → 클라이언트에서도 확인 가능
-4️. 1분마다 크론탭(checkCondition.sh)이 실행 → mysqldb, springbootapp 컨테이너 상태를 체크
+1️. Spring Boot 애플리케이션(springbootapp)이 /app/logs/에 로그(app.log)를 생성 <br/>
+2️. 1분마다 crontab 통해 moveLogs.sh 실행 → /app/logs/에 있는 로그를 /mnt/log-volumes/app-logs/로 이동 <br/>
+3️. 로그 파일이 NFS 마운트된 경로(/mnt/log-volumes/app-logs/)로 이동됨 → 클라이언트에서도 확인 가능 <br/>
+4️. 1분마다 crontab 통해 checkCondition.sh 실행 → mysqldb, springbootapp 컨테이너 상태를 체크 
 
 
 
@@ -191,7 +191,7 @@ volumes:
     driver: local
     driver_opts:
       type: "nfs"
-      o: "addr=192.168.88.160,rw"
+      o: "addr=10.0.2.15,rw"
       device: ":/mnt/nfs_shared"
 ```
 
