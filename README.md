@@ -156,9 +156,7 @@ $sudo mount --bind <마운트 지점>
 # 접근 허용할 클라이언트 IP 설정
 $sudo nano /etc/exports
 
-/srv/nfs4         *(rw,sync,no_subtree_check,crossmnt,fsid=0)
-/srv/nfs4/backups *(rw,sync,no_subtree_check)
-/srv/nfs4/www     *(rw,sync,no_subtree_check)
+/mnt/nfs_shared 10.0.2.0/24(rw,sync,no_subtree_check,no_root_squash)
 
 # 설정 업데이트
 $sudo exportfs -ar 
@@ -181,6 +179,8 @@ $shomount -e <NFS서버 IP>
 ```
 
 
+
+
 `docker-compose.yml` 파일에 NFS 서버의 파일 경로를 설정한다.
 
 ```yaml
@@ -197,8 +197,12 @@ volumes:
 
 
 
+- 클라이언트 서버에서 정상 마운트 확인
+<img src="img/mount.png" width=500>
 
-
+- 클라이언트 서버에서 마운트된 디렉터리에 로그가 잘 저장되고 있는지 확인
+- 로그 내용 확인
+<img src="img/mount2.png" width=500>
 
 
 
@@ -272,8 +276,11 @@ fi
 
 5️⃣ Crontab 등록 
 
-위 두 가지 파일을 주기적으로 실행시키도록 crontab에 등록한다. 
+위 두 가지 파일을 1분 단위로 실행하도록 crontab에 등록한다. 
+
 ```
+*/1 * * * * /home/ubuntu/mission/moveLogs.sh > /dev/null 2>&1
+*/1 * * * * /home/ubuntu/mission/checkCondition.sh > /dev/null 2>&1
 ```
 
 
