@@ -9,7 +9,7 @@
 1. [🙆🏻‍♂️ 팀원](#%EF%B8%8F-팀원)
 2. [❤️ 프로젝트 개요 - Docker를 활용한 Spring Boot 배포](#%EF%B8%8F-프로젝트-개요---docker를-활용한-spring-boot-배포)
 3. [🛠 미션 수행 과정](#-미션-수행-과정)
-4. [📚 프로젝트를 통해 배운 점](#-프로젝트를-통해-배운-점)
+4. [🔧 앞으로 개선할 점](#-앞으로-개선할-점)
 
 ## 🙆🏻‍♂️ 팀원
 
@@ -34,12 +34,6 @@
 **왜 NFS를 사용했는가?** <br/>
 - 네트워크를 통해서 **팀원 간 동일한 파일 시스템을 공유**할 수 있기 때문에, 볼륨 마운트나 바인드 마운트보다 확장성이 높다고 판단
 - 데이터 저장소를 중앙 집중형으로 관리 가능하기 때문에 단일 서버에서 모든 데이터를 관리할 수 있음
-
-**전체 프로세스**<br/>
-1️. Spring Boot 애플리케이션(springbootapp)이 /app/logs/에 로그(app.log)를 생성 <br/>
-2️. 1분마다 crontab 통해 moveLogs.sh 실행 → /app/logs/에 있는 로그를 /mnt/log-volumes/app-logs/로 이동 <br/>
-3️. 로그 파일이 NFS 마운트된 경로(/mnt/log-volumes/app-logs/)로 이동됨 → 클라이언트에서도 확인 가능 <br/>
-4️. 1분마다 crontab 통해 checkCondition.sh 실행 → mysqldb, springbootapp 컨테이너 상태를 체크 
 
 
 
@@ -132,6 +126,7 @@ else
 fi
 ```
 
+---
 
 ### 2️⃣ NFS 서버 및 클라이언트 구성하기
 
@@ -204,7 +199,7 @@ volumes:
 - 로그 내용 확인
 <img src="img/mount2.png" width=500>
 
-
+---
 
 ### 3️⃣ Container 상태 체크하기
 
@@ -273,19 +268,49 @@ fi
 
 ```
 
+---
 
-5️⃣ Crontab 등록 
+### 5️⃣ 이동된 로그 파일들을 자동 벡업시키기 
 
-위 두 가지 파일을 1분 단위로 실행하도록 crontab에 등록한다. 
+```
+#!/bin/bash
+
+LOG_DIR="./logs"  # 원본 로그 디렉터리
+BACKUP_DIR="/mnt/log-volumes/app-backups"  # 백업 디렉터리
+DATE=$(date +%Y-%m-%d_%H-%M-%S)
+# 대상 디렉터리가 없으면 생성
+mkdir -p "$BACKUP_DIR"
+# 로그 파일 복사 (타임스탬프 추가해서 보관)
+for file in "$LOG_DIR"/*.log; do
+    if [ -f "$file" ]; then
+        cp "$file" "$BACKUP_DIR/$(basename "$file" .log)_$DATE.log"
+    fi
+done
+# 결과 출력
+if [ $? -eq 0 ]; then
+    echo ":흰색_확인_표시: 로그 파일이 $BACKUP_DIR 에 백업 완료!"
+else
+    echo ":x: 로그 백업 실패!"
+fi
+```
+
+---
+
+### 6️⃣ Crontab 등록 
+
+위 세 가지 Shell 파일을 1분 단위로 실행하도록 crontab에 등록한다.
 
 ```
 */1 * * * * /home/ubuntu/mission/moveLogs.sh > /dev/null 2>&1
 */1 * * * * /home/ubuntu/mission/checkCondition.sh > /dev/null 2>&1
+*/1 * * * * /home/ubuntu/mission/backupLogs.sh > /dev/null 2>&1
 ```
 
 
+## 🔧 앞으로 개선할 점
 
-
-## 📚 프로젝트를 통해 배운 점
+- 로그 데이터를 백업하는 과정이 지속적으로 진행된다면 용량이 부족해질 수 있다.
+  - 이를 방지하기 위해 [logrotate](https://linux.die.net/man/8/logrotate) 도구를 사용하여 주기적으로 로그 파일을 압축 및 순환시키는 설정을 할 수 있다.
+  - 혹은 `cron` 작업과 함께 `log` 파일을 일정 주기로 초기화하거나, 일정 용량 이상일 때만 비우는 로직을 추가하여 개선할 수 있다.
 
 
